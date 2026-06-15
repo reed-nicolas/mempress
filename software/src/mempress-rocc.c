@@ -30,6 +30,25 @@ enum STREAM_TYPE {
     RAND_WR = 5
 };
 
+// Select which access pattern this binary exercises at compile time.
+// Even-indexed streams use BASE_RD, odd-indexed streams use BASE_WR.
+#if defined(PAT_STRIDE)
+  #define PAT_NAME "stride"
+  #define BASE_RD STRIDE_RD
+  #define BASE_WR STRIDE_WR
+#elif defined(PAT_BURST)
+  // burst HW in reqgen is still a stub, so not built by default (see Makefile).
+  #define PAT_NAME "burst"
+  #define BASE_RD BURST_RD
+  #define BASE_WR BURST_WR
+#elif defined(PAT_RAND)
+  #define PAT_NAME "rand"
+  #define BASE_RD RAND_RD
+  #define BASE_WR RAND_WR
+#else
+  #error "build with exactly one of -DPAT_STRIDE / -DPAT_BURST / -DPAT_RAND"
+#endif
+
 int main() {
   printf("main() started\n");
 
@@ -54,8 +73,8 @@ int main() {
   enum STREAM_TYPE stream_type[MAX_STREAMS];
   for (ii = 0; ii < MAX_STREAMS; ii++) {
       int r = ii % 2;
-      if (r == 0) stream_type[ii] = RAND_RD;
-      else stream_type[ii] = RAND_WR;
+      if (r == 0) stream_type[ii] = BASE_RD;
+      else stream_type[ii] = BASE_WR;
   }
 
   int mem_size = addr_range * stream_cnt;
